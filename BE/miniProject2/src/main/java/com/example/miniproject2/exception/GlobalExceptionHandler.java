@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
 @ControllerAdvice
-public class GlobalException{
+public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex, WebRequest request) {

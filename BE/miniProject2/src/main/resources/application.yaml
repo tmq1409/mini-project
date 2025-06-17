@@ -5,8 +5,8 @@ server:
 spring:
   datasource:
     url: jdbc:sqlserver://localhost:1433;databaseName=miniProject;encrypt=false
-    username:
-    password:
+    username: sa
+    password: LK28vankhe
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
   liquibase:
     enabled: true
