@@ -2,6 +2,9 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import axios from 'axios';
 import { ElMessageBox, ElMessage } from 'element-plus'
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
 
 const students = ref([]);
 const searchText = ref('');
@@ -31,6 +34,10 @@ watch(searchText, getStudents);
 const searchStudents = () => {
   currentPage.value = 0;
   getStudents();
+};
+
+const redirectToCreate = () => {
+  router.push('/student/create');
 };
 
 const confirmDelete = async (id) => {
@@ -77,8 +84,9 @@ const handlePageChange = (page) => {
         </el-col>
         <el-col :span="6">
           <el-button type="primary" @click="searchStudents">Tìm</el-button>
-          </el-col>
+        </el-col>
       </el-row>
+      <el-button type="success" @click="redirectToCreate">Thêm mới</el-button>
     </div>
 
     <div class="table-container">
