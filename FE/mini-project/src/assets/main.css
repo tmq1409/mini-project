@@ -1,0 +1,27 @@
+@import './base.css';
+
+#app {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-weight: normal;
+}
+
+a,
+.green {
+  text-decoration: none;
+  color: rgb(0, 82, 189);
+  font-size: 18px;    
+  font-weight: bold;   
+  padding: 6px 10px;     
+  margin-left: 20px;
+  transition: 0.4s;
+  display: inline-block;      
+  border-radius: 4px;         
+}
+
+a:hover,
+.green:hover {
+  background-color: rgba(0, 129, 189, 0.1); /* Hiệu ứng khi hover */
+  color: #005a87;
+}
