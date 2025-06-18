@@ -1,22 +1,31 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import axios from 'axios';
-import { ElMessageBox, ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router';
+import BaseTable from '@/components/common/BaseTable.vue';
+import MessageBox from '@/utils/MessageBox.vue';
 
 const router = useRouter();
 
 const students = ref([]);
 const searchText = ref('');
-const currentPage = ref(0);
+const currentPage = ref(1);
 const pageSize = ref(5);
 const totalPages = ref(0);
+
+const selectedId = ref(null);
+const confirmDelete = ref();
+
+const showConfirm = (id) => {
+  selectedId.value = id;
+  confirmDelete.value.execute(); // Gọi phương thức hiển thị MessageBox
+};
 
 const getStudents = async() => {
     try {
         const response = await axios.get('http://localhost:8079/api/v1/students', {
         params: {
-            page: currentPage.value,
+            page: currentPage.value - 1,
             size: pageSize.value,
             keyword: searchText.value || ''
         } 
@@ -24,48 +33,24 @@ const getStudents = async() => {
     students.value = response.data.content;
     totalPages.value = response.data.totalPages;
     } catch (error) {
-        console.error('Lỗi khi gọi API:', error);
+      console.error(error);
+      ElMessage.error('Đã có lỗi xảy ra');
     }
 }
 
 onMounted(getStudents);
-watch(searchText, getStudents);
+watch(searchText, () => {
+  currentPage.value = 1;
+  getStudents();
+});
 
 const searchStudents = () => {
-  currentPage.value = 0;
+  currentPage.value = 1;
   getStudents();
 };
 
 const redirectToCreate = () => {
   router.push('/student/create');
-};
-
-const confirmDelete = async (id) => {
-  try {
-    await ElMessageBox.confirm(
-      'Bạn có chắc chắn muốn xóa sinh viên này?',
-      'Xác nhận xóa',
-      {
-        confirmButtonText: 'Xóa',
-        cancelButtonText: 'Hủy',
-        type: 'warning',
-      }
-    );
-
-    await axios.delete(`http://localhost:8079/api/v1/students/${id}`);
-    ElMessage.success('Xóa sinh viên thành công');
-    await getStudents();
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error(error);
-      ElMessage.error('Xóa thất bại');
-    }
-  }
-};
-
-const handlePageChange = (page) => {
-  currentPage.value = page - 1;
-  getStudents();
 };
 </script>
 
@@ -90,41 +75,49 @@ const handlePageChange = (page) => {
     </div>
 
     <div class="table-container">
-      <el-table :data="students" style="width: 100%">
-        <el-table-column label="Họ Tên" prop="fullName">
+      <BaseTable
+      :data="students"
+      :total="totalPages * pageSize"
+      :page-size="pageSize"
+      :current-page="currentPage" 
+      @page-change="(page) => { currentPage = page; getStudents(); }"
+      >
+        <el-table-column label="Họ Tên">
           <template #default="{ row }">
             {{ row.firstName }} {{ row.lastName }}
           </template>
         </el-table-column>
+
         <el-table-column label="Ngày Sinh" prop="dateOfBirth" />
+
         <el-table-column label="SĐT" prop="phoneNumber" />
+
         <el-table-column label="Email" prop="email" min-width="150" />
+
         <el-table-column label="Avatar">
           <template #default="{ row }">
             <img :src="row.avatar" class="avatar" />
           </template>
         </el-table-column>
+
         <el-table-column label="Hành động">
           <template #default="{ row }">
-            <el-button type="danger" @click="confirmDelete(row.id)">Xóa</el-button>
+            <el-button type="danger" @click="showConfirm(row.id)">Xóa</el-button>
           </template>
         </el-table-column>
-      </el-table>
+      </BaseTable>
+            <MessageBox
+            ref="confirmDelete"
+            :title="'Xác nhận xóa'"
+            :message="'Bạn có chắc chắn muốn xóa sinh viên này?'"
+            :type="'warning'"
+            :onConfirm="() => axios.delete(`http://localhost:8079/api/v1/students/${selectedId}`)"
+            @success="getStudents"
+            />
     </div>
 
-    <el-pagination
-        layout="prev, pager, next"
-        :total="totalPages * pageSize"
-        :page-size="pageSize"
-        :current-page="currentPage + 1"
-        @current-change="handlePageChange"
-        background
-        class="pagination"
-    />
   </div>
 </template>
-
-
 
 <style scoped>
 .container {
@@ -187,25 +180,4 @@ const handlePageChange = (page) => {
   object-fit: cover;
 }
 
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 16px;
-  gap: 16px;
-}
-
-.pagination button {
-  padding: 6px 12px;
-  background-color: #409eff;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.pagination button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
 </style>
