@@ -4,7 +4,7 @@ import { ElMessageBox, ElMessage } from 'element-plus'
 const props = defineProps({
     title: {type: String, required: true},
     message: {type: String, required: true},
-    type: { type: String, default: 'warning' }, // warning, info, success, error
+    type: { type: String, default: 'warning' },
     onConfirm: { type: Function, required: true }
 });
 

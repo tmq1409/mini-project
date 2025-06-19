@@ -1,34 +1,72 @@
 <template>
   <div class="base-table-wrapper">
-    <el-table :data="data" style="width: 100%">
+    <el-table :data="data" v-loading="loading" style="width: 100%">
       <slot />
     </el-table>
 
-    <el-pagination
-      layout="prev, pager, next"
-      :total="total"
-      :page-size="pageSize"
-      :current-page="currentPage"
-      @current-change="onPageChange"
-      background
-      class="pagination"
-    />
+    <div class="pagination-wrapper">
+    
+
+      <el-pagination
+        layout="sizes, prev, pager, next"
+        :total="total"
+        :page-size="pageSize"
+        :current-page="currentPage"
+        @size-change="onPageSizeChange"
+        @current-change="onPageChange"
+        background
+        class="pagination"
+      />
+    </div>
   </div>
 </template>
 
 <script setup>
+import { ref, onMounted, watch } from 'vue';
+
+const currentPage = ref(1);
+const pageSize = ref(10);
+const total = ref(0);
+const data = ref([]);
+
+const loading = ref(false);
+
 const props = defineProps({
-  data: Array,
-  total: Number,
-  pageSize: Number,
-  currentPage: Number
+  getData: { type: Function, required: true },
 });
 
-const emit = defineEmits(['page-change']);
+watch(() => props.searchKey, () => {
+  currentPage.value = 1;
+  fetchData();
+});
+
+const fetchData = async () => {
+  loading.value = true;
+  try {
+    const res = await props.getData(currentPage.value, pageSize.value);
+    data.value = res.content;
+    total.value = res.totalElements || res.total || 0;
+  } catch (e) {
+    alert('Loi load data');
+  } finally {
+    loading.value = false;
+  }
+};
 
 const onPageChange = (page) => {
-  emit('page-change', page);
+  currentPage.value = page;
 };
+
+const onPageSizeChange = (size) => {
+  pageSize.value = size;
+  currentPage.value = 1;
+};
+
+
+watch([currentPage, pageSize], fetchData);
+onMounted(fetchData);
+
+defineExpose({fetchData});
 </script>
 
 <style scoped>
@@ -36,13 +74,21 @@ const onPageChange = (page) => {
   width: 100%;
 }
 
-.pagination {
+.pagination-wrapper {
   display: flex;
   justify-content: center;
   align-items: center;
   margin-top: 16px;
-  gap: 16px;
   margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
 }
 
 .pagination button {

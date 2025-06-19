@@ -6,82 +6,66 @@ import BaseTable from '@/components/common/BaseTable.vue';
 import MessageBox from '@/utils/MessageBox.vue';
 
 const router = useRouter();
-
-const students = ref([]);
+const baseTableRef = ref();
 const searchText = ref('');
-const currentPage = ref(1);
-const pageSize = ref(5);
-const totalPages = ref(0);
-
 const selectedId = ref(null);
 const confirmDelete = ref();
 
-const showConfirm = (id) => {
+const showConfirmDelete = (id) => {
   selectedId.value = id;
-  confirmDelete.value.execute(); // Gọi phương thức hiển thị MessageBox
+  confirmDelete.value.execute(); 
 };
 
-const getStudents = async() => {
-    try {
-        const response = await axios.get('http://localhost:8079/api/v1/students', {
-        params: {
-            page: currentPage.value - 1,
-            size: pageSize.value,
-            keyword: searchText.value || ''
-        } 
-    });
-    students.value = response.data.content;
-    totalPages.value = response.data.totalPages;
-    } catch (error) {
-      console.error(error);
-      ElMessage.error('Đã có lỗi xảy ra');
+const getStudents = async (page, size) => {
+  const response = await axios.get('http://localhost:8079/api/v1/students', {
+    params: {
+      page: page - 1,
+      size,
+      keyword: searchText.value || ''
     }
-}
+  });
 
-onMounted(getStudents);
-watch(searchText, () => {
-  currentPage.value = 1;
-  getStudents();
-});
-
-const searchStudents = () => {
-  currentPage.value = 1;
-  getStudents();
+  return {
+    content: response.data.content,
+    total: response.data.totalElements
+  };
 };
 
 const redirectToCreate = () => {
   router.push('/student/create');
 };
+
+watch(searchText, () => {
+  baseTableRef.value?.fetchData();
+});
 </script>
 
 <template>
   <div class="container">
     <h1 class="title">Danh sách sinh viên</h1>
-
+          <MessageBox
+            ref="confirmDelete"
+            :title="'Xác nhận xóa'"
+            :message="'Bạn có chắc chắn muốn xóa sinh viên này?'"
+            :type="'warning'"
+            :onConfirm="() => axios.delete(`http://localhost:8079/api/v1/students/${selectedId}`)"
+            @success="getStudents"
+            />
     <div class="search-box">
       <el-row :gutter="10" class="search-row">
-        <el-col :span="18">
+        <el-col :span="20">
           <el-input
             v-model="searchText"
             placeholder="Tìm sinh viên theo tên, sđt, email..."
             clearable
           />
         </el-col>
-        <el-col :span="6">
-          <el-button type="primary" @click="searchStudents">Tìm</el-button>
-        </el-col>
       </el-row>
       <el-button type="success" @click="redirectToCreate">Thêm mới</el-button>
     </div>
 
     <div class="table-container">
-      <BaseTable
-      :data="students"
-      :total="totalPages * pageSize"
-      :page-size="pageSize"
-      :current-page="currentPage" 
-      @page-change="(page) => { currentPage = page; getStudents(); }"
-      >
+      <BaseTable ref="baseTableRef" :get-data="getStudents" >
         <el-table-column label="Họ Tên">
           <template #default="{ row }">
             {{ row.firstName }} {{ row.lastName }}
@@ -102,18 +86,10 @@ const redirectToCreate = () => {
 
         <el-table-column label="Hành động">
           <template #default="{ row }">
-            <el-button type="danger" @click="showConfirm(row.id)">Xóa</el-button>
+            <el-button type="danger" @click="showConfirmDelete(row.id)">Xóa</el-button>
           </template>
         </el-table-column>
       </BaseTable>
-            <MessageBox
-            ref="confirmDelete"
-            :title="'Xác nhận xóa'"
-            :message="'Bạn có chắc chắn muốn xóa sinh viên này?'"
-            :type="'warning'"
-            :onConfirm="() => axios.delete(`http://localhost:8079/api/v1/students/${selectedId}`)"
-            @success="getStudents"
-            />
     </div>
 
   </div>
@@ -131,7 +107,7 @@ const redirectToCreate = () => {
   text-align: center;
   font-size: 32px;
   font-weight: bold;
-  color: #2c3e50; /* Màu đậm sang trọng */
+  color: #2c3e50;
   margin-bottom: 30px;
   position: relative;
   padding-bottom: 12px;
@@ -141,7 +117,7 @@ const redirectToCreate = () => {
   content: '';
   width: 80px;
   height: 4px;
-  background-color: #409eff; /* Màu chính của Element Plus */
+  background-color: #409eff;
   display: block;
   margin: 10px auto 0;
   border-radius: 2px;
